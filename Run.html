@@ -1,0 +1,100 @@
+<html>
+
+<head>
+    <title>My Script</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+    #out > :nth-child(1) {
+        color: darkred;
+    }
+    #out {
+        color: grey;
+    }
+    </style>
+    <script>
+        var reloadTimer;
+        var interval_s = 2;
+
+        var url = "https://www.bestbuy.ca/ecomm-api/availability/products?accept=application%2Fvnd.bestbuy.standardproduct.v1%2Bjson&accept-language=en-CA&locations=940%7C928%7C972%7C627%7C639%7C224%7C975&postalCode=K1S&skus=15166285"
+        var settings = {
+            'cache': false,
+            'dataType': "jsonp",
+            "async": true,
+            "crossDomain": true,
+            "url": url,
+            "method": "GET",
+            "headers": {
+                "accept": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "error": function(XMLHttpRequest, textStatus, errorThrown) {
+                show(errorMessage("Error with request."));
+            }
+
+        }
+
+        function stop() {
+            clearInterval(reloadTimer);
+        }
+
+        function start() {
+            reloadTimer = setInterval(function() {
+                $.ajax(settings).done(function(response) {
+                    try {
+                        startAlert(response);
+                        show(parseResp(response));
+                    } catch (err) {
+                        show(errorMessage("Error parsing response."));
+                    }
+                });
+            }, 1000 * interval_s);
+        }
+
+        function parseResp(response) {
+            var newDate = new Date();
+            message = "" + newDate + ": ";
+            message += "Ship: " + response.availabilities[0].shipping.status;
+            message += "  Pickup: " + response.availabilities[0].pickup.status + " (";
+            response.availabilities[0].pickup.locations.forEach(function(location) {
+                message += location.quantityOnHand + ",";
+            });
+            message = message.replace(/,\s*$/, "");
+            message += ")";
+            return message;
+        }
+
+        function errorMessage(str) {
+            var newDate = new Date();
+            message = "" + newDate + ": " + str;
+            return message;
+        }
+
+        function startAlert(response) {
+            if (response.availabilities[0].shipping.status != "ComingSoon" || response.availabilities[0].pickup.status != "ComingSoon") {
+                var win = window.open("https://www.google.com/search?q=timer+1+second&oq=timer++1s&aqs=chrome.1.0j0i10l3j0j0i10l4j0i22i30.5285j0j7&sourceid=chrome&ie=UTF-8", '_blank');
+            }
+        }
+
+        function show(message) {
+            var outDiv = document.getElementById("out");
+
+            while (outDiv.childElementCount > 20) {
+                outDiv.removeChild(out.lastChild);
+            }
+
+            outDiv.innerHTML = "<div>" + message + "</div>" + outDiv.innerHTML;
+
+
+        }
+    </script>
+</head>
+
+<button onclick="start();">Run</button>
+<button onclick="stop();">Stop</button>
+<a target="_blank" href="https://www.bestbuy.ca/en-ca/product/nvidia-geforce-rtx-3060-ti-8gb-gddr6-video-card/15166285">3060ti</a>
+<div id="out"></div>
+
+
+
+
+</html>
